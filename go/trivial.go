@@ -5,16 +5,27 @@ import (
 	"os"
 	"time"
 
-	"github.com/opentracing/opentracing-go"
-	zipkin "github.com/openzipkin/zipkin-go-opentracing"
+	"github.com/uber/jaeger-client-go"
+	"github.com/uber/jaeger-client-go/config"
 )
 
 func main() {
 	// 1) Create a opentracing.Tracer that sends data to Zipkin
-	collector, _ := zipkin.NewHTTPCollector(
-		fmt.Sprintf("http://%s:9411/api/v1/spans", os.Args[1]))
-	tracer, _ := zipkin.NewTracer(
-		zipkin.NewRecorder(collector, false, "127.0.0.1:0", "trivial"))
+	cfg := config.Configuration{
+		Sampler: &config.SamplerConfig{
+			Type:	"const",
+			Param:	1,
+		},
+		Reporter: &config.ReporterConfig{
+			LogSpans:		true,
+			BufferFlushInterval:	1 * time.Second,
+		},
+	}
+	tracer, closer, err := cfg.New(
+		"your_service_name",
+		config.Logger(jaeger.StdLogger),
+	)
+	defer closer.Close()
 
 	// 2) Demonstrate simple OpenTracing instrumentation
 	parent := tracer.StartSpan("Parent")
@@ -26,7 +37,4 @@ func main() {
 	}
 	parent.LogEvent("A Log")
 	parent.Finish()
-
-	// ... give Zipkin ample time to flush
-	time.Sleep(2 * time.Second)
 }
