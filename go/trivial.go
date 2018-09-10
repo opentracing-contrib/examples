@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/opentracing/opentracing-go"
 	"github.com/uber/jaeger-client-go"
 	"github.com/uber/jaeger-client-go/config"
 )
@@ -13,18 +14,23 @@ func main() {
 	// 1) Create a opentracing.Tracer that sends data to Zipkin
 	cfg := config.Configuration{
 		Sampler: &config.SamplerConfig{
-			Type:	"const",
-			Param:	1,
+			Type:  "const",
+			Param: 1,
 		},
 		Reporter: &config.ReporterConfig{
-			LogSpans:		true,
-			BufferFlushInterval:	1 * time.Second,
+			LogSpans:            true,
+			BufferFlushInterval: 1 * time.Second,
 		},
 	}
 	tracer, closer, err := cfg.New(
 		"your_service_name",
 		config.Logger(jaeger.StdLogger),
 	)
+	if err != nil {
+		fmt.Printf("Cannot create tracer: %s", err)
+		os.Exit(1)
+	}
+
 	defer closer.Close()
 
 	// 2) Demonstrate simple OpenTracing instrumentation
