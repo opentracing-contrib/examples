@@ -7,6 +7,8 @@ import (
 
 	"github.com/uber/jaeger-client-go"
 	"github.com/uber/jaeger-client-go/config"
+
+	"github.com/opentracing/opentracing-go"
 )
 
 func main() {
@@ -25,6 +27,10 @@ func main() {
 		"your_service_name",
 		config.Logger(jaeger.StdLogger),
 	)
+	if (err != nil){
+		fmt.Println("Cannot create tracer: %v\n", err.Error())
+		os.Exit(1)
+	}
 	defer closer.Close()
 
 	// 2) Demonstrate simple OpenTracing instrumentation
